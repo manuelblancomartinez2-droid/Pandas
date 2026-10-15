@@ -1,0 +1,61 @@
+import pandas as pd 
+import numpy as np 
+
+#obtenemos datos
+NvidiaStock= pd.read_csv("C:\\Users\\manue\\OneDrive\\Documentos\\nvidia_stock_data_1999_2026.csv")
+NvidiaStock= NvidiaStock.drop(['quarterly_revenue_usd_bn','stock_split','era','key_event','shares_outstanding_bn'], axis =1)
+DictNvidia = NvidiaStock.to_dict(orient='records')
+
+def estrategia(datos):
+    
+    en_posicion = False
+    precio_compra = 0
+    pnl_acumulado = 0
+    Aciertos = 0 
+    fallos = 0
+    winrate = None     
+    ema50_ant = None
+    ema200_ant = None
+    
+    
+    for fila in datos:
+        fecha = fila.get('date')
+        ema50 = fila.get('sma_50')
+        ema200 = fila.get('sma_200')
+        open_price = fila.get('open')
+        
+        
+        if ema50_ant is not None and ema200_ant is not None:
+            
+            
+            if ema50_ant <= ema200_ant and ema50 > ema200:
+                if not en_posicion:
+                    precio_compra = open_price
+                    en_posicion = True
+                    print("COMPRA el dia:{fecha}","a precio:", open_price)
+            
+            
+            elif ema50_ant >= ema200_ant and ema50 < ema200:
+                if en_posicion:
+                    pnl_operacion = open_price - precio_compra
+                    pnl_acumulado += pnl_operacion
+                    en_posicion = False
+                    if pnl_operacion > 0: 
+                        Aciertos += 1
+                    else: 
+                        fallos += 1
+
+                    winrate = Aciertos/(Aciertos+fallos)
+
+                    
+                    print('Venta{fecha}',open_price+ pnl_operacion)
+        
+        
+        ema50_ant = ema50
+        ema200_ant = ema200
+        
+    return pnl_acumulado, winrate
+
+
+
+print(estrategia(DictNvidia))
